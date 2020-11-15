@@ -1,36 +1,4 @@
-#include <ctype.h>
-#include <stdarg.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-// ref
-// https://www.toumasu-program.net/entry/2019/08/21/135448
-
-// トークンの種類
-typedef enum {
-  TK_RESERVED,  // 記号
-  TK_NUM,       // 整数トークン
-  TK_EOF,       // 入力の終わりを表すトークン
-} TokenKind;
-
-typedef struct Token Token;
-
-// トークン型
-struct Token {
-  TokenKind kind;  // トークンの型
-  Token *next;     // 次の入力トークン
-  int val;         // kindがTK_NUMの場合、その数値
-  char *str;       // トークン文字列
-  int len;         // トークンの長さ
-};
-
-// 現在のトークン
-Token *token;
-
-// インプット
-char *user_input;
+#include "calc.h"
 
 // エラーを報告するための関数
 // printfと同じ引数を取る
@@ -125,29 +93,6 @@ Token *tokenize(char *p) {
   return head.next;
 }
 
-// 抽象構文木のノードの種類
-typedef enum {
-  ND_ADD,  // +
-  ND_SUB,  // -
-  ND_MUL,  // *
-  ND_DIV,  // /
-  ND_NUM,  // 整数
-  ND_EQ,   // ==
-  ND_NE,   // !=
-  ND_LT,   // <
-  ND_LE,   // <=
-} NodeKind;
-
-typedef struct Node Node;
-
-// 抽象構文木のノードの型
-struct Node {
-  NodeKind kind;  // ノードの型
-  Node *lhs;      // 左辺
-  Node *rhs;      // 右辺
-  int val;        // kindがND_NUMの場合のみ使う
-};
-
 Node *new_node(NodeKind kind, Node *lhs, Node *rhs) {
   Node *node = calloc(1, sizeof(Node));
   node->kind = kind;
@@ -162,14 +107,6 @@ Node *new_node_num(int val) {
   node->val = val;
   return node;
 }
-
-Node *expr();
-Node *equality();
-Node *relational();
-Node *add();
-Node *mul();
-Node *unary();
-Node *primary();
 
 Node *expr() { return equality(); }
 
