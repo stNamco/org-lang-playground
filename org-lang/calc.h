@@ -64,7 +64,6 @@ Token *token;
 // インプット
 char *user_input;
 
-
 void error(char *fmt, ...);
 bool consume(char *op);
 void expect(char *op);
@@ -72,3 +71,5 @@ int expect_number();
 bool at_eof();
 Token *new_token(TokenKind kind, Token *current, char *str, int len);
 Token *tokenize();
+
+void gen(Node *node);
