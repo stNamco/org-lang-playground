@@ -1,11 +1,16 @@
-CFLAGS=-std=c11 -g -static 
+CFLAGS=-std=c11 -g -static
+SRCS=$(wildcard *.c)
+OBJS=$(SRCS:.c=.o)
 
-org: calc
+calc: $(OBJS)
+	$(CC) -o calc $(OBJS) $(LDFLAGS)
 
-test: calc 
-	./test.sh 
+$(OBJS): calc.h
 
-clean: 
-	rm -f calc *.o *~ tmp* 
+test: calc
+	./test.sh
 
-.PHONY: clean test
+clean:
+	rm -f calc *.o *~ tmp*
+
+.PHONY: test clean
