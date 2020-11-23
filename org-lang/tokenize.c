@@ -10,6 +10,19 @@ void error(char *fmt, ...) {
   exit(1);
 }
 
+void error_at(char *loc, char *fmt, ...) {
+  va_list ap;
+  va_start(ap, fmt);
+
+  int pos = loc - user_input;
+  fprintf(stderr, "%s\n", user_input);
+  fprintf(stderr, "%*s", pos, "");  // print pos spaces.
+  fprintf(stderr, "^ ");
+  vfprintf(stderr, fmt, ap);
+  fprintf(stderr, "\n");
+  exit(1);
+}
+
 // 次のトークンが期待している記号のときには、トークンを1つ読み進めて
 // 真を返す。それ以外の場合には偽を返す。
 bool consume(char *op) {
@@ -20,12 +33,20 @@ bool consume(char *op) {
   return true;
 }
 
+Token *consume_ident() {
+  if (token->kind != TK_IDENT) return NULL;
+  Token *t = token;
+  token = token->next;
+  return t;
+}
+
 // 次のトークンが期待している記号のときには、トークンを1つ読み進める。
 // それ以外の場合にはエラーを報告する。
 void expect(char *op) {
   if (token->kind != TK_RESERVED || strlen(op) != token->len ||
       memcmp(token->str, op, token->len))
-    error("'%c'ではありません", op);
+    // error("'%c'ではありません", op);
+    error_at(token->str, "expected \"%s\"", op);
   token = token->next;
 }
 
@@ -52,6 +73,12 @@ Token *new_token(TokenKind kind, Token *current, char *str, int len) {
 
 bool startswith(char *p, char *q) { return memcmp(p, q, strlen(q)) == 0; }
 
+bool is_alpha(char c) {
+  return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || c == '_';
+}
+
+bool is_alnum(char c) { return is_alpha(c) || ('0' <= c && c <= '9'); }
+
 // 入力文字列pをトークナイズしてそれを返す
 Token *tokenize(char *p) {
   Token head;
@@ -65,6 +92,13 @@ Token *tokenize(char *p) {
       continue;
     }
 
+    // Keyword
+    if (startswith(p, "return") && !is_alnum(p[6])) {
+      current = new_token(TK_RESERVED, current, p, 6);
+      p += 6;
+      continue;
+    }
+
     // 複数文字
     if (startswith(p, "==") || startswith(p, "!=") || startswith(p, "<=") ||
         startswith(p, ">=")) {
@@ -73,8 +107,16 @@ Token *tokenize(char *p) {
       continue;
     }
 
-    if (strchr("+-*/()<>", *p)) {
+    // 記号
+    if (strchr("+-*/()<>;=", *p)) {
       current = new_token(TK_RESERVED, current, p++, 1);
+      continue;
+    }
+
+    // 変数
+    if ('a' <= *p && *p <= 'z') {
+      current = new_token(TK_IDENT, current, p++, 1);
+      current->len = 1;
       continue;
     }
 
