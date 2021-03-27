@@ -1,38 +1,13 @@
 #include "calc.h"
 
-void codegen(Node *node);
-
 int main(int argc, char **argv) {
-  if (argc != 2) {
-    error("引数の個数が正しくありません");
-    return 1;
-  }
+  if (argc != 2) error("%s: invalid number of arguments", argv[0]);
 
-  // トークナイズしてパースする
-  user_input = argv[1];
-  token = tokenize(user_input);
+  Token *tok = tokenize(argv[1]);
+  Function *prog = parse(tok);
 
-  Node *node = program();
+  // Traverse the AST to emit assembly.
+  codegen(prog);
 
-  codegen(node);
   return 0;
-}
-
-void codegen(Node *node) {
-  printf(".intel_syntax noprefix\n");
-  printf(".global main\n");
-  printf("main:\n");
-
-  // Prologue
-  printf("  push rbp\n");
-  printf("  mov rbp, rsp\n");
-  printf("  sub rsp, 208\n");
-
-  for (Node *n = node; n; n = n->next) gen(n);
-
-  // Epilogue
-  printf(".Lreturn:\n");
-  printf("  mov rsp, rbp\n");
-  printf("  pop rbp\n");
-  printf("  ret\n");
 }

@@ -1,3 +1,5 @@
+#define _POSIX_C_SOURCE 200809L
+#include <assert.h>
 #include <ctype.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -5,84 +7,86 @@
 #include <stdlib.h>
 #include <string.h>
 
-// ref
-// https://www.toumasu-program.net/entry/2019/08/21/135448
 
-// トークンの種類
+typedef struct Node Node;
+
+// Token
 typedef enum {
-  TK_RESERVED,  // 記号
-  TK_IDENT,    // 識別子
-  TK_NUM,       // 整数トークン
-  TK_EOF,       // 入力の終わりを表すトークン
+  TK_IDENT,   // Identifiers
+  TK_PUNCT,   // Punctuators
+  TK_KEYWORD, // Keywords
+  TK_NUM,     // Numeric literals
+  TK_EOF,     // End-of-file markers
 } TokenKind;
 
 typedef struct Token Token;
 
-// トークン型
 struct Token {
-  TokenKind kind;  // トークンの型
-  Token *next;     // 次の入力トークン
-  int val;         // kindがTK_NUMの場合、その数値
-  char *str;       // トークン文字列
-  int len;         // トークンの長さ
+  TokenKind kind; // Token kind
+  Token *next;    // Next token
+  int val;        // If kind is TK_NUM, its value
+  char *loc;      // Token location
+  int len;        // Token length
 };
 
 
-// 抽象構文木のノードの種類
+//
+// parse.c
+//
+
+// Local variable
+typedef struct Obj Obj;
+struct Obj {
+  Obj *next;
+  char *name; // Variable name
+  int offset; // Offset from RBP
+};
+
+// Function
+typedef struct Function Function;
+struct Function {
+  Node *body;
+  Obj *locals;
+  int stack_size;
+};
+
+
+// AST node
 typedef enum {
-  ND_ADD,  // +
-  ND_SUB,  // -
-  ND_MUL,  // *
-  ND_DIV,  // /
-  ND_NUM,  // 整数
-  ND_EQ,   // ==
-  ND_NE,   // !=
-  ND_LT,   // <
-  ND_LE,   // <=
-  ND_ASSIGN, // =
-  ND_LVAR,   // ローカル変数
+  ND_ADD,       // +
+  ND_SUB,       // -
+  ND_MUL,       // *
+  ND_DIV,       // /
+  ND_NEG,       // unary -
+  ND_EQ,        // ==
+  ND_NE,        // !=
+  ND_LT,        // <
+  ND_LE,        // <=
+  ND_ASSIGN,    // =
   ND_RETURN,    // "return"
-  ND_EXPR_STMT,
+  ND_EXPR_STMT, // Expression statement
+  ND_VAR,       // Variable
+  ND_NUM,       // Integer
 } NodeKind;
 
 
-typedef struct Node Node;
-
-// 抽象構文木のノードの型
+// AST node type
 struct Node {
-  NodeKind kind;  // ノードの型
-  Node *lhs;      // 左辺
-  Node *rhs;      // 右辺
+  NodeKind kind; // Node kind
   Node *next;    // Next node
-  int val;        // kindがND_NUMの場合のみ使う
-  char name;     // Used if kind == ND_LVAR
+  Node *lhs;     // Left-hand side
+  Node *rhs;     // Right-hand side
+  Obj *var;      // Used if kind == ND_VAR
+  int val;       // Used if kind == ND_NUM
 };
 
-// Node *code;
-Node *code[100];
-Node *program();
-Node *stmt();
-Node *assign();
-Node *expr();
-Node *equality();
-Node *relational();
-Node *add();
-Node *mul();
-Node *unary();
-Node *primary();
-
-// 現在のトークン
-Token *token;
-// インプット
-char *user_input;
-
 void error(char *fmt, ...);
-bool consume(char *op);
-Token *consume_ident();
-void expect(char *op);
-int expect_number();
-bool at_eof();
-Token *new_token(TokenKind kind, Token *current, char *str, int len);
-Token *tokenize();
+void error_at(char *loc, char *fmt, ...);
+void error_tok(Token *tok, char *fmt, ...);
+bool equal(Token *tok, char *op);
+Token *skip(Token *tok, char *op);
+Token *tokenize(char *input);
 
-void gen(Node *node);
+Function *parse(Token *tok);
+
+void codegen(Function *prog);

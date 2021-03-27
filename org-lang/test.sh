@@ -51,6 +51,8 @@ assert 0 '1>=2;'
 # 変数
 assert 3 'a=3; return a;'
 assert 15 'a=10; b=5; return a+b;'
+# 複数文字の変数
+assert 15 'aa=10; bb=5; return aa+bb;'
 
 
 echo OK
